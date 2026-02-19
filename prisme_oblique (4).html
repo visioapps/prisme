@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculateur de Prisme</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+        .header .title {
+            color: #2c5282;
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .header .subtitle {
+            color: #718096;
+            font-size: 14px;
+        }
+
+        .calculator {
+            max-width: 500px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 20px;
+        }
+
+        /* Input rows */
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .input-row:focus-within {
+            z-index: 10;
+        }
+
+        .label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #2d3748;
+            min-width: 170px;
+        }
+
+        /* Cycle buttons - styled like epicanthus nav but colored */
+        .cycle-btn {
+            min-width: 66px;
+            padding: 11px 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #4a5568;
+            background: #e2e8f0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .cycle-btn:hover { background: #cbd5e0; }
+
+        .cycle-btn.zero { background: #e2e8f0; color: #a0aec0; }
+
+        .cycle-btn.et,
+        .cycle-btn.xt,
+        .cycle-btn.hd,
+        .cycle-btn.hg  { background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%); color: white; box-shadow: 0 4px 12px rgba(66,153,225,0.35); }
+
+        /* Input wrapper & field */
+        .input-wrapper {
+            position: relative;
+            flex: 1;
+        }
+
+        .input-field {
+            position: relative;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 11px 36px 11px 14px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c5282;
+            background: white;
+            transition: all 0.2s;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66,153,225,0.15);
+        }
+
+        .unit {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 13px;
+            font-weight: 600;
+            color: #a0aec0;
+        }
+
+        /* Quick-pick dropdown */
+        .quick-pick {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            z-index: 100;
+            padding: 8px;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+        }
+
+        .quick-pick.open { display: grid; }
+
+        .qp-btn {
+            padding: 8px 4px;
+            background: #f7fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #2c5282;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.15s;
+        }
+
+        .qp-btn:hover {
+            background: linear-gradient(135deg, #4299e1, #3182ce);
+            color: white;
+            border-color: transparent;
+        }
+
+        /* Divider */
+        .divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 20px 0;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            margin-bottom: 16px;
+        }
+
+        .result-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 14px;
+        }
+
+        .eye-results {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .eye-card {
+            background: linear-gradient(180deg, #f7fafc 0%, #edf2f7 100%);
+            border-radius: 12px;
+            padding: 14px;
+            border: none;
+            text-align: center;
+        }
+
+        .eye-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 8px;
+        }
+
+        .eye-value {
+            font-size: 26px;
+            font-weight: 700;
+            color: #2c5282;
+            margin-bottom: 6px;
+        }
+
+        .eye-angle {
+            font-size: 11px;
+            color: #718096;
+            font-weight: 500;
+            margin-bottom: 10px;
+            min-height: 16px;
+        }
+
+        .prism-circle {
+            width: 110px;
+            height: 110px;
+            margin: 0 auto;
+        }
+
+        .circle-svg { width: 100%; height: 100%; }
+
+        /* Slider section */
+        .slider-section {
+            background: linear-gradient(180deg, #f7fafc 0%, #edf2f7 100%);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 0;
+            border: none;
+        }
+
+        .slider-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 10px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .slider-container { position: relative; padding: 8px 0; }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 5px;
+            background: #bee3f8;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            border: 3px solid #4299e1;
+            box-shadow: 0 2px 8px rgba(66,153,225,0.35);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            border: 3px solid #4299e1;
+            box-shadow: 0 2px 8px rgba(66,153,225,0.35);
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 6px;
+            font-size: 11px;
+            font-weight: 500;
+            color: #a0aec0;
+        }
+
+        .slider-value {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #2c5282;
+        }
+
+        /* Buttons row */
+        .reset-btn-wrap {
+            margin-top: 16px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .copy-btn {
+            padding: 12px 28px;
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+            border: none;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 500;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(66,153,225,0.3);
+            transition: all 0.2s ease;
+        }
+
+        .copy-btn:active { transform: scale(0.95); }
+        .copy-btn.copied { background: linear-gradient(135deg, #68d391, #38a169); box-shadow: 0 4px 12px rgba(56,161,105,0.3); }
+
+        .reset-btn-full {
+            padding: 12px 28px;
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+            border: none;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 500;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(66,153,225,0.3);
+            transition: all 0.2s ease;
+        }
+
+        .reset-btn-full:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 8px rgba(66,153,225,0.4);
+        }
+
+        @media (max-width: 500px) {
+            .calculator { padding: 14px; }
+            .label { min-width: 140px; font-size: 13px; }
+            .eye-value { font-size: 22px; }
+            .prism-circle { width: 90px; height: 90px; }
+        }
+    </style>
+</head>
+</head>
+<body>
+    <div class="header">
+        <div class="title">Calculateur de Prisme</div>
+    </div>
+
+    <div class="calculator">
+        <div class="card">
+        <div class="input-row">
+            <div class="label">Déviation horizontale :</div>
+            <button class="cycle-btn zero" id="hBtn" onclick="cycleHorizontal()">0</button>
+            <div class="input-wrapper" id="hWrapper">
+                <div class="input-field">
+                    <input type="number" id="hValue" value="0" min="0" step="0.5" oninput="calculate()" onfocus="openQuickPick('hQuickPick')">
+                    <span class="unit">∆</span>
+                </div>
+                <div class="quick-pick" id="hQuickPick">
+                    <button class="qp-btn" onclick="pickValue('h',1)">1</button>
+                    <button class="qp-btn" onclick="pickValue('h',2)">2</button>
+                    <button class="qp-btn" onclick="pickValue('h',3)">3</button>
+                    <button class="qp-btn" onclick="pickValue('h',4)">4</button>
+                    <button class="qp-btn" onclick="pickValue('h',5)">5</button>
+                    <button class="qp-btn" onclick="pickValue('h',6)">6</button>
+                    <button class="qp-btn" onclick="pickValue('h',7)">7</button>
+                    <button class="qp-btn" onclick="pickValue('h',8)">8</button>
+                    <button class="qp-btn" onclick="pickValue('h',9)">9</button>
+                    <button class="qp-btn" onclick="pickValue('h',10)">10</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-row">
+            <div class="label">Déviation verticale :</div>
+            <button class="cycle-btn zero" id="vBtn" onclick="cycleVertical()">0</button>
+            <div class="input-wrapper" id="vWrapper">
+                <div class="input-field">
+                    <input type="number" id="vValue" value="0" min="0" step="0.5" oninput="calculate()" onfocus="openQuickPick('vQuickPick')">
+                    <span class="unit">∆</span>
+                </div>
+                <div class="quick-pick" id="vQuickPick">
+                    <button class="qp-btn" onclick="pickValue('v',1)">1</button>
+                    <button class="qp-btn" onclick="pickValue('v',2)">2</button>
+                    <button class="qp-btn" onclick="pickValue('v',3)">3</button>
+                    <button class="qp-btn" onclick="pickValue('v',4)">4</button>
+                    <button class="qp-btn" onclick="pickValue('v',5)">5</button>
+                    <button class="qp-btn" onclick="pickValue('v',6)">6</button>
+                    <button class="qp-btn" onclick="pickValue('v',7)">7</button>
+                    <button class="qp-btn" onclick="pickValue('v',8)">8</button>
+                    <button class="qp-btn" onclick="pickValue('v',9)">9</button>
+                    <button class="qp-btn" onclick="pickValue('v',10)">10</button>
+                </div>
+            </div>
+                </div><!-- end inputs card -->
+
+        <div class="card">
+        <div class="result-section">
+            <div class="result-title">Puissance prismatique par œil</div>
+            <div class="eye-results">
+                <div class="eye-card">
+                    <div class="eye-label">OD (Œil Droit)</div>
+                    <div class="eye-value" id="odValue">0∆</div>
+                    <div class="eye-angle" id="odAngle">—</div>
+                    <div class="prism-circle">
+                        <svg class="circle-svg" viewBox="0 0 120 120" id="odCircle">
+                            <circle cx="60" cy="60" r="50" fill="white" stroke="#e2e8f0" stroke-width="2"/>
+                            <line x1="60" y1="10" x2="60" y2="110" stroke="#f1f5f9" stroke-width="1"/>
+                            <line x1="10" y1="60" x2="110" y2="60" stroke="#f1f5f9" stroke-width="1"/>
+                            <text x="60" y="7" font-size="8" fill="#94a3b8" text-anchor="middle" font-family="Inter" font-weight="600">S</text>
+                            <text x="60" y="118" font-size="8" fill="#94a3b8" text-anchor="middle" font-family="Inter" font-weight="600">I</text>
+                            <text x="7" y="63" font-size="8" fill="#94a3b8" text-anchor="middle" font-family="Inter" font-weight="600">T</text>
+                            <text x="113" y="63" font-size="8" fill="#94a3b8" text-anchor="middle" font-family="Inter" font-weight="600">N</text>
+                            <!-- Triangle prisme OD: base à l'extérieur, pointe au centre -->
+                            <polygon id="odPrismTriangle" points="60,15 48,105 72,105" fill="#ffd4c4"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="eye-card">
+                    <div class="eye-label">OG (Œil Gauche)</div>
+                    <div class="eye-value" id="ogValue">0∆</div>
+                    <div class="eye-angle" id="ogAngle">—</div>
+                    <div class="prism-circle">
+                        <svg class="circle-svg" viewBox="0 0 120 120" id="ogCircle">
+                            <circle cx="60" cy="60" r="50" fill="white" stroke="#e2e8f0" stroke-width="2"/>
+                            <line x1="60" y1="10" x2="60" y2="110" stroke="#f1f5f9" stroke-width="1"/>
+                            <line x1="10" y1="60" x2="110" y2="60" stroke="#f1f5f9" stroke-width="1"/>
+                            <text x="60" y="7" font-size="8" fill="#94a3b8" text-anchor="middle" font-family="Inter" font-weight="600">S</text>
+                            <text x="60" y="118" font-size="8" fill="#94a3b8" text-anchor="middle" font-family="Inter" font-weight="600">I</text>
+                            <text x="7" y="63" font-size="8" fill="#94a3b8" text-anchor="middle" font-family="Inter" font-weight="600">N</text>
+                            <text x="113" y="63" font-size="8" fill="#94a3b8" text-anchor="middle" font-family="Inter" font-weight="600">T</text>
+                            <!-- Triangle prisme OG: base à l'extérieur, pointe au centre -->
+                            <polygon id="ogPrismTriangle" points="60,15 48,105 72,105" fill="#ffd4c4"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slider-section">
+            <div class="slider-label">Répartition OD / OG</div>
+            <div class="slider-container">
+                <input type="range" id="slider" min="0" max="100" value="50" step="10" oninput="updateDistribution()">
+            </div>
+            <div class="slider-labels">
+                <span>100% OD</span>
+                <span>50/50</span>
+                <span>100% OG</span>
+            </div>
+            <div class="slider-value" id="sliderValue">50% OD - 50% OG</div>
+        </div>
+
+    </div>
+
+    <div style="max-width:500px; margin: 0 auto; width:100%; padding: 0 20px 30px; display:flex; gap:12px; justify-content:center;">
+        <button class="copy-btn" id="copyBtn" onclick="copyOrdonnance()">📋 Copier</button>
+        <button class="reset-btn-full" onclick="resetAll()">↺ Réinitialiser</button>
+    </div>
+
+    <script>
+        let state = {
+            horizontal: { state: 0, value: 0 },
+            vertical: { state: 0, value: 0 },
+            sliderPos: 50 // position brute du slider (0 = tout OD, 100 = tout OG)
+        };
+
+        // Vider le champ si la valeur est 0 au focus
+        document.addEventListener('DOMContentLoaded', function() {
+            ['hValue', 'vValue'].forEach(function(id) {
+                var el = document.getElementById(id);
+                el.addEventListener('focus', function() {
+                    if (this.value === '0' || this.value === '') this.value = '';
+                });
+                el.addEventListener('blur', function() {
+                    if (this.value === '' || isNaN(parseFloat(this.value))) this.value = 0;
+                    calculate();
+                });
+            });
+        });
+
+        function setSlider(pos) {
+            // Snap to nearest 10
+            pos = Math.round(pos / 10) * 10;
+            state.sliderPos = pos;
+            document.getElementById('slider').value = pos;
+            var odPct = 100 - pos;
+            var ogPct = pos;
+            document.getElementById('sliderValue').textContent = odPct + '% OD - ' + ogPct + '% OG';
+        }
+
+        function cycleHorizontal() {
+            state.horizontal.state = (state.horizontal.state + 1) % 3;
+            const btn = document.getElementById('hBtn');
+            btn.classList.remove('zero', 'et', 'xt');
+            if (state.horizontal.state === 0) {
+                btn.textContent = '0'; btn.classList.add('zero');
+                document.getElementById('hValue').value = 0; state.horizontal.value = 0;
+                openQuickPick(null);
+            } else if (state.horizontal.state === 1) {
+                btn.textContent = 'Et'; btn.classList.add('et');
+                openQuickPick('hQuickPick');
+            } else {
+                btn.textContent = 'Xt'; btn.classList.add('xt');
+                openQuickPick('hQuickPick');
+            }
+            calculate();
+        }
+
+        function cycleVertical() {
+            state.vertical.state = (state.vertical.state + 1) % 3;
+            const btn = document.getElementById('vBtn');
+            btn.classList.remove('zero', 'hd', 'hg');
+            if (state.vertical.state === 0) {
+                btn.textContent = '0'; btn.classList.add('zero');
+                document.getElementById('vValue').value = 0; state.vertical.value = 0;
+                setSlider(50); // retour 50/50
+                openQuickPick(null);
+            } else if (state.vertical.state === 1) {
+                btn.textContent = 'HD'; btn.classList.add('hd');
+                setSlider(0); // HD -> tout sur OD
+                openQuickPick('vQuickPick');
+            } else {
+                btn.textContent = 'HG'; btn.classList.add('hg');
+                setSlider(100); // HG -> tout sur OG
+                openQuickPick('vQuickPick');
+            }
+            calculate();
+        }
+
+        function updateDistribution() {
+            state.sliderPos = parseInt(document.getElementById('slider').value);
+            var odPercent = 100 - state.sliderPos;
+            var ogPercent = state.sliderPos;
+            document.getElementById('sliderValue').textContent = odPercent + '% OD - ' + ogPercent + '% OG';
+            calculate();
+        }
+
+        function calculate() {
+            const H = parseFloat(document.getElementById('hValue').value) || 0;
+            const V = parseFloat(document.getElementById('vValue').value) || 0;
+            state.horizontal.value = H;
+            state.vertical.value = V;
+
+            if ((state.horizontal.state === 0 || H === 0) && (state.vertical.state === 0 || V === 0)) {
+                document.getElementById('odValue').textContent = '0∆';
+                document.getElementById('ogValue').textContent = '0∆';
+                document.getElementById('odAngle').textContent = '—';
+                document.getElementById('ogAngle').textContent = '—';
+                resetCircle('od'); resetCircle('og');
+                document.getElementById('odCircle').style.visibility = 'hidden';
+                document.getElementById('ogCircle').style.visibility = 'hidden';
+                return;
+            }
+
+            const P = Math.sqrt(H * H + V * V);
+            const P_rounded = Math.round(P * 2) / 2;
+
+            // sliderPos 0 = tout OD (100%), sliderPos 100 = tout OG (100%)
+            const odPercent = (100 - state.sliderPos) / 100;
+            const ogPercent = state.sliderPos / 100;
+
+            const odPower = Math.round(P_rounded * odPercent * 2) / 2;
+            const ogPower = Math.round(P_rounded * ogPercent * 2) / 2;
+
+            const odAngle = calculateAngle('OD', H, V);
+            const ogAngle = calculateAngle('OG', H, V);
+
+            document.getElementById('odValue').textContent = odPower.toFixed(1) + '∆';
+            document.getElementById('ogValue').textContent = ogPower.toFixed(1) + '∆';
+
+            // Toujours rendre visible par défaut avant d'appliquer la logique
+            document.getElementById('odCircle').style.visibility = 'visible';
+            document.getElementById('ogCircle').style.visibility = 'visible';
+
+            // Masquer le cercle si la puissance arrondie est 0
+            if (odPower === 0) document.getElementById('odCircle').style.visibility = 'hidden';
+            if (ogPower === 0) document.getElementById('ogCircle').style.visibility = 'hidden';
+
+            // Si 100% sur un oeil, masquer le cercle et l'angle de l'autre oeil
+            if (state.sliderPos === 0) {
+                // Tout sur OD : masquer OG
+                document.getElementById('odAngle').textContent = odAngle;
+                document.getElementById('ogAngle').textContent = '';
+                updatePrismCircle('od', odAngle, odPower);
+                resetCircle('og');
+                document.getElementById('ogCircle').style.visibility = 'hidden';
+            } else if (state.sliderPos === 100) {
+                // Tout sur OG : masquer OD
+                document.getElementById('odAngle').textContent = '';
+                document.getElementById('ogAngle').textContent = ogAngle;
+                resetCircle('od');
+                document.getElementById('odCircle').style.visibility = 'hidden';
+                updatePrismCircle('og', ogAngle, ogPower);
+            } else {
+                document.getElementById('odAngle').textContent = odAngle;
+                document.getElementById('ogAngle').textContent = ogAngle;
+                document.getElementById('odCircle').style.visibility = 'visible';
+                document.getElementById('ogCircle').style.visibility = 'visible';
+                updatePrismCircle('od', odAngle, odPower);
+                updatePrismCircle('og', ogAngle, ogPower);
+            }
+        }
+
+        function updatePrismCircle(eye, angleText, power) {
+            const angleMatch = angleText.match(/Base (\d+)°/);
+            if (!angleMatch || power === 0) { resetCircle(eye); return; }
+            const angle = parseInt(angleMatch[1]);
+            const cx = 60, cy = 60;
+            // Convention: 0°=droite(N), 90°=haut(S), 180°=gauche(T), 270°=bas(I)
+            const angleRad = angle * (Math.PI / 180);
+
+            // Triangle allongé : pointe sur un bord, base étroite sur l'autre bord
+            const R = 44;
+            const phi = 20 * Math.PI / 180; // base étroite ±20°
+
+            // Pointe (côté arête, sur le bord du cercle)
+            const apexX = cx - R * Math.cos(angleRad);
+            const apexY = cy + R * Math.sin(angleRad);
+
+            // Deux coins de la base (sur le bord du cercle, ±20° de l'axe)
+            const b1x = cx + R * Math.cos(angleRad + phi);
+            const b1y = cy - R * Math.sin(angleRad + phi);
+            const b2x = cx + R * Math.cos(angleRad - phi);
+            const b2y = cy - R * Math.sin(angleRad - phi);
+
+            const pts = b1x.toFixed(1)+','+b1y.toFixed(1)+' '+
+                        apexX.toFixed(1)+','+apexY.toFixed(1)+' '+
+                        b2x.toFixed(1)+','+b2y.toFixed(1);
+
+            document.getElementById(eye+'PrismTriangle').setAttribute('points', pts);
+        }
+
+        function resetCircle(eye) {
+            // Collapse triangle to a point (invisible)
+            document.getElementById(eye+'PrismTriangle').setAttribute('points', '60,60 60,60 60,60');
+        }
+
+        function calculateAngle(eye, H, V) {
+            if (H === 0 && V === 0) return '—';
+            const hState = state.horizontal.state;
+            const vState = state.vertical.state;
+            let angle = 0, baseDesc = '';
+
+            if (V === 0 || vState === 0) {
+                if (eye === 'OD') {
+                    if (hState === 1) { angle = 180; baseDesc = 'Base Temporale'; }
+                    else { angle = 0; baseDesc = 'Base Nasale'; }
+                } else {
+                    if (hState === 1) { angle = 0; baseDesc = 'Base Temporale'; }
+                    else { angle = 180; baseDesc = 'Base Nasale'; }
+                }
+            } else if (H === 0 || hState === 0) {
+                if (eye === 'OD') {
+                    if (vState === 1) { angle = 270; baseDesc = 'Base Inférieure'; }  // HD → OD base inf
+                    else              { angle = 90;  baseDesc = 'Base Supérieure'; }  // HG → OD base sup
+                } else {
+                    if (vState === 1) { angle = 90;  baseDesc = 'Base Supérieure'; } // HD → OG base sup
+                    else              { angle = 270; baseDesc = 'Base Inférieure'; } // HG → OG base inf
+                }
+            } else {
+                // OD: atan2(V, H) — axe de référence = Nasal (droite)
+                // OG: atan2(H, V) — axe de référence = Temporal (droite pour OG)
+                if (eye === 'OD') {
+                    const ba = Math.atan2(V, H) * (180 / Math.PI);
+                    if (hState === 1 && vState === 1) { angle = 180 + ba; baseDesc = 'Base Inf-Temp'; }
+                    else if (hState === 1 && vState === 2) { angle = 180 - ba; baseDesc = 'Base Sup-Temp'; }
+                    else if (hState === 2 && vState === 1) { angle = 360 - ba; baseDesc = 'Base Inf-Nas'; }
+                    else { angle = ba; baseDesc = 'Base Sup-Nas'; }
+                } else {
+                    const ba = Math.atan2(H, V) * (180 / Math.PI);
+                    if (hState === 1 && vState === 1) { angle = ba; baseDesc = 'Base Sup-Temp'; }
+                    else if (hState === 1 && vState === 2) { angle = 360 - ba; baseDesc = 'Base Inf-Temp'; }
+                    else if (hState === 2 && vState === 1) { angle = 180 - ba; baseDesc = 'Base Sup-Nas'; }
+                    else { angle = 180 + ba; baseDesc = 'Base Inf-Nas'; }
+                }
+            }
+            angle = ((angle % 360) + 360) % 360;
+            return `Base ${Math.round(angle)}° (${baseDesc})`;
+        }
+
+        // Quick-pick: open on cycle button activation, close on outside click
+        function openQuickPick(id) {
+            document.getElementById('hQuickPick').classList.remove('open');
+            document.getElementById('vQuickPick').classList.remove('open');
+            if (id) document.getElementById(id).classList.add('open');
+        }
+
+        function pickValue(axis, val) {
+            var inputId = axis === 'h' ? 'hValue' : 'vValue';
+            document.getElementById(inputId).value = val;
+            openQuickPick(null); // close dropdown
+            calculate();
+        }
+
+        // Close quick-pick when clicking outside
+        document.addEventListener('click', function(e) {
+            var hW = document.getElementById('hWrapper');
+            var vW = document.getElementById('vWrapper');
+            if (hW && !hW.contains(e.target) && !document.getElementById('hBtn').contains(e.target)) {
+                document.getElementById('hQuickPick').classList.remove('open');
+            }
+            if (vW && !vW.contains(e.target) && !document.getElementById('vBtn').contains(e.target)) {
+                document.getElementById('vQuickPick').classList.remove('open');
+            }
+        });
+
+        function resetAll() {
+            // Close any open quick-picks
+            openQuickPick(null);
+            // Reset horizontal
+            state.horizontal.state = 0; state.horizontal.value = 0;
+            var hBtn = document.getElementById('hBtn');
+            hBtn.className = 'cycle-btn zero'; hBtn.textContent = '0';
+            document.getElementById('hValue').value = 0;
+
+            // Reset vertical
+            state.vertical.state = 0; state.vertical.value = 0;
+            var vBtn = document.getElementById('vBtn');
+            vBtn.className = 'cycle-btn zero'; vBtn.textContent = '0';
+            document.getElementById('vValue').value = 0;
+
+            // Reset slider to 50/50
+            setSlider(50);
+
+            // Reset circles visibility
+            document.getElementById('odCircle').style.visibility = 'visible';
+            document.getElementById('ogCircle').style.visibility = 'visible';
+
+            calculate();
+        }
+
+        function buildOrdonnanceText() {
+            var lines = [];
+
+            var H = parseFloat(document.getElementById('hValue').value) || 0;
+            var V = parseFloat(document.getElementById('vValue').value) || 0;
+            var hState = state.horizontal.state;
+            var vState = state.vertical.state;
+
+            // Get displayed powers
+            var odText = document.getElementById('odValue').textContent.replace('∆','').trim();
+            var ogText = document.getElementById('ogValue').textContent.replace('∆','').trim();
+            var odPow = parseFloat(odText);
+            var ogPow = parseFloat(ogText);
+            var odAngle = document.getElementById('odAngle').textContent;
+            var ogAngle = document.getElementById('ogAngle').textContent;
+
+            function formatPrism(pow, angleText) {
+                if (!pow || pow === 0) return null;
+                // Extract angle number
+                var m = angleText.match(/Base (\d+)°/);
+                if (!m) return null;
+                var ang = parseInt(m[1]);
+                var desc = angleText.match(/\(([^)]+)\)/);
+                var descStr = desc ? ' (' + desc[1] + ')' : '';
+
+                // Cardinal axes → use BI/BE/BS/BI notation
+                if (ang === 0 || ang === 360)   return pow + '\u0394 Base Nasale (0°)';
+                if (ang === 180)                 return pow + '\u0394 Base Temporale (180°)';
+                if (ang === 90)                  return pow + '\u0394 Base Supérieure (90°)';
+                if (ang === 270)                 return pow + '\u0394 Base Inférieure (270°)';
+                // Oblique
+                return pow + '\u0394 base ' + ang + '°' + descStr;
+            }
+
+            var odStr = formatPrism(odPow, odAngle);
+            var ogStr = formatPrism(ogPow, ogAngle);
+
+            var parts = [];
+            if (odStr) parts.push('OD : prisme ' + odStr);
+            if (ogStr) parts.push('OG : prisme ' + ogStr);
+
+            if (parts.length === 0) return 'Aucune correction prismatique.';
+            return 'Ajouter à la correction : ' + parts.join(' / ');
+        }
+
+        function copyOrdonnance() {
+            var text = buildOrdonnanceText();
+            navigator.clipboard.writeText(text).then(function() {
+                var btn = document.getElementById('copyBtn');
+                btn.textContent = '✓ Copié !';
+                btn.classList.add('copied');
+                setTimeout(function() {
+                    btn.textContent = '📋 Copier';
+                    btn.classList.remove('copied');
+                }, 2000);
+            }).catch(function() {
+                // Fallback
+                var ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                var btn = document.getElementById('copyBtn');
+                btn.textContent = '✓ Copié !';
+                btn.classList.add('copied');
+                setTimeout(function() {
+                    btn.textContent = '📋 Copier';
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // Init
+        updateDistribution();
+        calculate();
+    </script>
+</body>
+</html>
