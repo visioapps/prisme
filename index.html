@@ -693,24 +693,30 @@
                     else              { angle = 270; baseDesc = 'Base Inférieure'; } // HG → OG base inf
                 }
             } else {
-                // OD: atan2(V, H) — axe de référence = Nasal (droite)
-                // OG: atan2(H, V) — axe de référence = Temporal (droite pour OG)
-                if (eye === 'OD') {
-                    const ba = Math.atan2(V, H) * (180 / Math.PI);
-                    if (hState === 1 && vState === 1) { angle = 180 + ba; baseDesc = 'Base Inf-Temp'; }
-                    else if (hState === 1 && vState === 2) { angle = 180 - ba; baseDesc = 'Base Sup-Temp'; }
-                    else if (hState === 2 && vState === 1) { angle = 360 - ba; baseDesc = 'Base Inf-Nas'; }
-                    else { angle = ba; baseDesc = 'Base Sup-Nas'; }
-                } else {
-                    // OG: atan2(H,V) UNIQUEMENT pour Et+HG, atan2(V,H) pour tous les autres
-                    const ba = (hState === 1 && vState === 2)
-                        ? Math.atan2(H, V) * (180 / Math.PI)
-                        : Math.atan2(V, H) * (180 / Math.PI);
-                    if (hState === 1 && vState === 1) { angle = ba; baseDesc = 'Base Sup-Temp'; }
-                    else if (hState === 1 && vState === 2) { angle = 360 - ba; baseDesc = 'Base Inf-Temp'; }
-                    else if (hState === 2 && vState === 1) { angle = 180 - ba; baseDesc = 'Base Sup-Nas'; }
-                    else { angle = 180 + ba; baseDesc = 'Base Inf-Nas'; }
-                }
+                // Méthode vectorielle : composition des composantes H et V
+                // OD: Et=Temp(180°), Xt=Nas(0°), HD=Inf(270°), HG=Sup(90°)
+                // OG: Et=Temp(0°),  Xt=Nas(180°), HD=Sup(90°), HG=Inf(270°)
+                const hBase = (eye === 'OD')
+                    ? (hState === 1 ? 180 : 0)
+                    : (hState === 1 ? 0 : 180);
+                const vBase = (eye === 'OD')
+                    ? (vState === 1 ? 270 : 90)
+                    : (vState === 1 ? 90 : 270);
+                const hRad = hBase * Math.PI / 180;
+                const vRad = vBase * Math.PI / 180;
+                const cx = H * Math.cos(hRad) + V * Math.cos(vRad);
+                const cy = H * Math.sin(hRad) + V * Math.sin(vRad);
+                angle = (Math.atan2(cy, cx) * 180 / Math.PI + 360) % 360;
+
+                // Description du quadrant
+                if      (angle > 180 && angle < 270) baseDesc = 'Base Inf-Temp';
+                else if (angle > 90  && angle < 180) baseDesc = 'Base Sup-Temp';
+                else if (angle > 270 && angle < 360) baseDesc = 'Base Inf-Nas';
+                else if (angle > 0   && angle < 90 ) baseDesc = 'Base Sup-Nas';
+                else if (angle === 0 || angle === 360) baseDesc = 'Base Nasale';
+                else if (angle === 90)  baseDesc = 'Base Supérieure';
+                else if (angle === 180) baseDesc = 'Base Temporale';
+                else if (angle === 270) baseDesc = 'Base Inférieure';
             }
             angle = ((angle % 360) + 360) % 360;
             return `Base ${Math.round(angle)}° (${baseDesc})`;
