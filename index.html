@@ -702,7 +702,10 @@
                     else if (hState === 2 && vState === 1) { angle = 360 - ba; baseDesc = 'Base Inf-Nas'; }
                     else { angle = ba; baseDesc = 'Base Sup-Nas'; }
                 } else {
-                    const ba = Math.atan2(H, V) * (180 / Math.PI);
+                    // OG: atan2(V,H) pour HD, atan2(H,V) pour HG
+                    const ba = (vState === 1)
+                        ? Math.atan2(V, H) * (180 / Math.PI)
+                        : Math.atan2(H, V) * (180 / Math.PI);
                     if (hState === 1 && vState === 1) { angle = ba; baseDesc = 'Base Sup-Temp'; }
                     else if (hState === 1 && vState === 2) { angle = 360 - ba; baseDesc = 'Base Inf-Temp'; }
                     else if (hState === 2 && vState === 1) { angle = 180 - ba; baseDesc = 'Base Sup-Nas'; }
