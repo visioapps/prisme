@@ -469,7 +469,7 @@
     </div>
 
     <div style="max-width:500px; margin: 0 auto; width:100%; padding: 0 20px 30px; display:flex; gap:12px; justify-content:center;">
-        <button class="copy-btn" id="copyBtn" onclick="copyOrdonnance()">📋 Copier</button>
+        <button class="copy-btn" id="copyBtn" onclick="copyOrdonnance()">Copier</button>
         <button class="reset-btn-full" onclick="resetAll()">↺ Réinitialiser</button>
     </div>
 
@@ -797,7 +797,7 @@
                 btn.textContent = '✓ Copié !';
                 btn.classList.add('copied');
                 setTimeout(function() {
-                    btn.textContent = '📋 Copier';
+                    btn.textContent = 'Copier';
                     btn.classList.remove('copied');
                 }, 2000);
             }).catch(function() {
@@ -812,7 +812,7 @@
                 btn.textContent = '✓ Copié !';
                 btn.classList.add('copied');
                 setTimeout(function() {
-                    btn.textContent = '📋 Copier';
+                    btn.textContent = 'Copier';
                     btn.classList.remove('copied');
                 }, 2000);
             });
