@@ -367,6 +367,78 @@
             box-shadow: 0 2px 8px rgba(66,153,225,0.4);
         }
 
+        /* Sliding toggle */
+        .step-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 14px;
+        }
+
+        .step-slider-wrap {
+            position: relative;
+            width: 260px;
+            height: 38px;
+            background: #e2e8f0;
+            border-radius: 20px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .step-slider-thumb {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 127px;
+            height: 32px;
+            background: linear-gradient(135deg, #4299e1, #3182ce);
+            border-radius: 17px;
+            box-shadow: 0 2px 8px rgba(66,153,225,0.35);
+            transition: left 0.25s ease;
+        }
+
+        .step-slider-thumb.right {
+            left: 130px;
+        }
+
+        .step-slider-labels {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .step-slider-label {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+            transition: color 0.25s;
+            line-height: 1.2;
+        }
+
+        .step-slider-label .label-main {
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .step-slider-label .label-sub {
+            font-size: 10px;
+            font-weight: 500;
+            opacity: 0.8;
+        }
+
+        .step-slider-label.active {
+            color: white;
+        }
+
+        .step-slider-label.inactive {
+            color: #94a3b8;
+        }
+
         @media (max-width: 500px) {
             .calculator { padding: 14px; }
             .label { min-width: 140px; font-size: 13px; }
@@ -383,12 +455,27 @@
 
     <div class="calculator">
         <div class="card">
+        <div class="step-toggle">
+            <div class="step-slider-wrap" onclick="toggleStep()">
+                <div class="step-slider-thumb" id="stepThumb"></div>
+                <div class="step-slider-labels">
+                    <div class="step-slider-label active" id="stepLabel025">
+                        <span class="label-main">Prisme intégré</span>
+                        <span class="label-sub">pas de 0,25∆</span>
+                    </div>
+                    <div class="step-slider-label inactive" id="stepLabel1">
+                        <span class="label-main">Press-on</span>
+                        <span class="label-sub">pas de 1∆</span>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="input-row">
             <div class="label">Déviation horizontale :</div>
             <button class="cycle-btn zero" id="hBtn" onclick="cycleHorizontal()">0</button>
             <div class="input-wrapper" id="hWrapper">
                 <div class="input-field">
-                    <input type="number" id="hValue" value="0" min="0" step="0.5" oninput="calculate()" onfocus="openQuickPick('hQuickPick')">
+                    <input type="number" id="hValue" value="0" min="0" step="1" oninput="calculate()" onfocus="openQuickPick('hQuickPick')">
                     <span class="unit">∆</span>
                 </div>
                 <div class="quick-pick" id="hQuickPick">
@@ -411,7 +498,7 @@
             <button class="cycle-btn zero" id="vBtn" onclick="cycleVertical()">0</button>
             <div class="input-wrapper" id="vWrapper">
                 <div class="input-field">
-                    <input type="number" id="vValue" value="0" min="0" step="0.5" oninput="calculate()" onfocus="openQuickPick('vQuickPick')">
+                    <input type="number" id="vValue" value="0" min="0" step="1" oninput="calculate()" onfocus="openQuickPick('vQuickPick')">
                     <span class="unit">∆</span>
                 </div>
                 <div class="quick-pick" id="vQuickPick">
@@ -588,20 +675,23 @@
             }
 
             const P = Math.sqrt(H * H + V * V);
-            const P_rounded = Math.round(P * 2) / 2;
+            const step = currentStep || 0.25;
+            const inv = 1 / step;
+            const P_rounded = Math.round(P * inv) / inv;
 
             // sliderPos 0 = tout OD (100%), sliderPos 100 = tout OG (100%)
             const odPercent = (100 - state.sliderPos) / 100;
             const ogPercent = state.sliderPos / 100;
 
-            const odPower = Math.round(P_rounded * odPercent * 2) / 2;
-            const ogPower = Math.round(P_rounded * ogPercent * 2) / 2;
+            const odPower = Math.round(P_rounded * odPercent * inv) / inv;
+            const ogPower = Math.round(P_rounded * ogPercent * inv) / inv;
 
             const odAngle = calculateAngle('OD', H, V);
             const ogAngle = calculateAngle('OG', H, V);
 
-            document.getElementById('odValue').textContent = odPower.toFixed(1) + '∆';
-            document.getElementById('ogValue').textContent = ogPower.toFixed(1) + '∆';
+            const decimals = (currentStep && currentStep < 0.5) ? 2 : 1;
+            document.getElementById('odValue').textContent = odPower.toFixed(decimals) + '∆';
+            document.getElementById('ogValue').textContent = ogPower.toFixed(decimals) + '∆';
 
             // Toujours rendre visible par défaut avant d'appliquer la logique
             document.getElementById('odCircle').style.visibility = 'visible';
@@ -774,14 +864,6 @@
         }
 
         function buildOrdonnanceText() {
-            var lines = [];
-
-            var H = parseFloat(document.getElementById('hValue').value) || 0;
-            var V = parseFloat(document.getElementById('vValue').value) || 0;
-            var hState = state.horizontal.state;
-            var vState = state.vertical.state;
-
-            // Get displayed powers
             var odText = document.getElementById('odValue').textContent.replace('∆','').trim();
             var ogText = document.getElementById('ogValue').textContent.replace('∆','').trim();
             var odPow = parseFloat(odText);
@@ -789,33 +871,51 @@
             var odAngle = document.getElementById('odAngle').textContent;
             var ogAngle = document.getElementById('ogAngle').textContent;
 
-            function formatPrism(pow, angleText) {
-                if (!pow || pow === 0) return null;
-                // Extract angle number
+            var typeLabel = (currentStep === 1) ? 'Press-on' : 'Prisme intégré';
+
+            function formatAngle(angleText) {
                 var m = angleText.match(/Base (\d+)°/);
                 if (!m) return null;
                 var ang = parseInt(m[1]);
-                var desc = angleText.match(/\(([^)]+)\)/);
-                var descStr = desc ? ' (' + desc[1] + ')' : '';
-
-                // Cardinal axes → use BI/BE/BS/BI notation
-                if (ang === 0 || ang === 360)   return pow + '\u0394 Base Nasale (0°)';
-                if (ang === 180)                 return pow + '\u0394 Base Temporale (180°)';
-                if (ang === 90)                  return pow + '\u0394 Base Supérieure (90°)';
-                if (ang === 270)                 return pow + '\u0394 Base Inférieure (270°)';
-                // Oblique
-                return pow + '\u0394 base ' + ang + '°' + descStr;
+                // Cardinals: en toutes lettres
+                if (ang === 0 || ang === 360) return 'base nasale';
+                if (ang === 180)              return 'base temporale';
+                if (ang === 90)               return 'base supérieure';
+                if (ang === 270)              return 'base inférieure';
+                // Obliques: angle + description française
+                var descMap = {
+                    'Inf-Temp':  'Inféro-Temporal',
+                    'Sup-Temp':  'Supéro-Temporal',
+                    'Inf-Nas':   'Inféro-Nasal',
+                    'Sup-Nas':   'Supéro-Nasal',
+                    'Inf-Temp':  'Inféro-Temporal'
+                };
+                var descMatch = angleText.match(/\(Base ([^)]+)\)/);
+                var descFr = '';
+                if (descMatch) {
+                    var key = descMatch[1].replace('Base ','');
+                    descFr = descMap[key] ? ' (' + descMap[key] + ')' : '';
+                }
+                return 'base à ' + ang + '°' + descFr;
             }
 
-            var odStr = formatPrism(odPow, odAngle);
-            var ogStr = formatPrism(ogPow, ogAngle);
+            function formatPow(pow) {
+                // Use comma as decimal separator (French format)
+                return String(pow).replace('.', ',') + '∆';
+            }
 
             var parts = [];
-            if (odStr) parts.push('OD : prisme ' + odStr);
-            if (ogStr) parts.push('OG : prisme ' + ogStr);
+            if (odPow && odPow > 0) {
+                var ang = formatAngle(odAngle);
+                if (ang) parts.push("+ " + typeLabel + " de " + formatPow(odPow) + " " + ang + " sur l'OD");
+            }
+            if (ogPow && ogPow > 0) {
+                var ang2 = formatAngle(ogAngle);
+                if (ang2) parts.push("+ " + typeLabel + " de " + formatPow(ogPow) + " " + ang2 + " sur l'OG");
+            }
 
-            if (parts.length === 0) return 'Aucune correction prismatique.';
-            return 'Ajouter à la correction : ' + parts.join(' / ');
+            if (parts.length === 0) return "Aucune correction prismatique.";
+            return parts.join("\r\n");
         }
 
         function copyOrdonnance() {
@@ -846,9 +946,48 @@
             });
         }
 
+        // Pas de saisie
+        let currentStep = 0.25;
+
+        function toggleStep() {
+            setStep(currentStep === 0.25 ? 1 : 0.25);
+        }
+
+        function setStep(step) {
+            currentStep = step;
+            var isIntegre = step === 0.25;
+            // Slide the thumb
+            var thumb = document.getElementById('stepThumb');
+            thumb.classList.toggle('right', !isIntegre);
+            // Labels
+            document.getElementById('stepLabel025').className = 'step-slider-label ' + (isIntegre ? 'active' : 'inactive');
+            document.getElementById('stepLabel1').className   = 'step-slider-label ' + (!isIntegre ? 'active' : 'inactive');
+            // Update quick-pick values
+            updateQuickPick(step);
+            calculate();
+        }
+
+        function updateQuickPick(step) {
+            // Saisie H et V : toujours pas de 1
+            ['hQuickPick', 'vQuickPick'].forEach(function(id) {
+                var field = id === 'hQuickPick' ? 'h' : 'v';
+                var qp = document.getElementById(id);
+                qp.innerHTML = '';
+                var values = [1,2,3,4,5,6,7,8,9,10];
+                values.forEach(function(v) {
+                    var btn = document.createElement('button');
+                    btn.className = 'qp-btn';
+                    btn.textContent = v;
+                    btn.onclick = function() { pickValue(field, v); };
+                    qp.appendChild(btn);
+                });
+            });
+        }
+
         // Init
         updateDistribution();
         calculate();
+        updateQuickPick(0.25);
     </script>
 </body>
 </html>
